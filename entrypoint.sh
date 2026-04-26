@@ -37,11 +37,15 @@ if [[ ! -f "${config_path}" ]]; then
 fi
 
 environment_id=$(grep -o '"environmentId"[[:space:]]*:[[:space:]]*"[^"]*"' "${config_path}" | head -1 | sed -E 's/.*"environmentId"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
+trunk_app_url="${TRUNK_APP_URL:-https://app.trunk.codes}"
 echo ""
-echo "============================================"
-echo "  Trunk environmentId: ${environment_id}"
-echo "  Open: https://app.trunk.codes"
-echo "============================================"
+echo "============================================================"
+echo " Trunk environment is up — claim it against your account:"
+echo ""
+echo "   ${trunk_app_url}/claim?environmentId=${environment_id}"
+echo ""
+echo " Open that URL on any device, sign in, and you're done."
+echo "============================================================"
 echo ""
 
 # Bind to 0.0.0.0 so the host platform's healthcheck can reach $PORT.
