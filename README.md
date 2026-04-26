@@ -44,9 +44,9 @@ container exposes no inbound port to the public internet.
    writes the environmentId into your WorkOS metadata. Refresh
    [app.trunk.codes](https://app.trunk.codes) and you're connected.
 
-Set `TRUNK_WORKOS_CLIENT_ID` so the container knows which AuthKit
-client to authenticate against. Skip it (e.g. for non-SaaS forks) and
-the container starts unclaimed.
+No env var is required to claim against the public Trunk SaaS — the
+container ships with the right WorkOS client baked in. Forks pointing
+at their own AuthKit instance override it with `TRUNK_WORKOS_CLIENT_ID`.
 
 ## Deploy elsewhere
 
