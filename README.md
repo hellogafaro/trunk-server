@@ -30,16 +30,23 @@ container exposes no inbound port to the public internet.
    | `SSH_PRIVATE_KEY` | (optional, for cloning private repos) |
    | `GIT_USER_NAME` / `GIT_USER_EMAIL` | (optional, for agent commits) |
 4. **Public networking**: leave it disabled. Trunk only dials outbound.
-5. Deploy. Look at the logs — the first boot prints something like:
+5. Deploy. Look at the logs — the first boot prints a WorkOS device
+   verification URL and waits:
    ```
-   Trunk server pairing complete.
+   Sign in to Trunk to claim this environment:
 
-     config:    /data/.trunk/config.json
-     serverId:  calm-meadow-u9rx
+     https://workos.com/device?user_code=ABCD-EFGH
+
+   Waiting for sign-in...
    ```
-6. Sign in at [app.trunk.codes](https://app.trunk.codes), open
-   `/connect-server`, paste the `serverId`. The browser then opens a
-   real-time session against your Railway container.
+6. Open that URL in any browser, sign in to your Trunk account, and
+   approve. The container picks up the access token automatically and
+   writes the environmentId into your WorkOS metadata. Refresh
+   [app.trunk.codes](https://app.trunk.codes) and you're connected.
+
+Set `TRUNK_WORKOS_CLIENT_ID` so the container knows which AuthKit
+client to authenticate against. Skip it (e.g. for non-SaaS forks) and
+the container starts unclaimed.
 
 ## Deploy elsewhere
 

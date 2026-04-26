@@ -23,18 +23,18 @@ if [[ -n "${GIT_USER_EMAIL:-}" ]]; then
 fi
 
 # First boot writes ${TRUNK_HOME}/.trunk/config.json with a fresh
-# serverId; subsequent boots reuse it. The serverId is what users paste
-# into app.trunk.codes/connect-server.
+# environmentId and runs the WorkOS device flow to claim it; subsequent
+# boots reuse the existing config and skip the claim.
 config_path="${TRUNK_HOME}/.trunk/config.json"
 if [[ ! -f "${config_path}" ]]; then
   bun run apps/server/src/bin.ts pair
 fi
 
-server_id=$(grep -o '"serverId"[[:space:]]*:[[:space:]]*"[^"]*"' "${config_path}" | head -1 | sed -E 's/.*"serverId"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
+environment_id=$(grep -o '"environmentId"[[:space:]]*:[[:space:]]*"[^"]*"' "${config_path}" | head -1 | sed -E 's/.*"environmentId"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
 echo ""
 echo "============================================"
-echo "  Trunk serverId: ${server_id}"
-echo "  Paste it at: https://app.trunk.codes/connect"
+echo "  Trunk environmentId: ${environment_id}"
+echo "  Open: https://app.trunk.codes"
 echo "============================================"
 echo ""
 
