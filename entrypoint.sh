@@ -44,9 +44,12 @@ echo "  Open: https://app.trunk.codes"
 echo "============================================"
 echo ""
 
-# Loopback host keeps the inbound surface zero. The relay opens
-# loopback connections in-process; nothing else should reach /ws.
+# Bind to 0.0.0.0 so the host platform's healthcheck can reach $PORT.
+# T3's WS upgrade is still gated by the loopback-trust header (which
+# only RemoteLink, running in the same process, knows), and the
+# WorkOS bearer for browser /ws — so the open bind is not an exposure
+# as long as the container has no public networking configured.
 echo "[trunk-environment] launching serve on port ${PORT:-3773}"
 exec bun run apps/server/src/bin.ts serve \
   --port "${PORT:-3773}" \
-  --host 127.0.0.1
+  --host 0.0.0.0
