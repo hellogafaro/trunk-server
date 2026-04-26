@@ -6,6 +6,9 @@ RUN apt-get update \
        openssh-client \
        ca-certificates \
        curl \
+       python3 \
+       make \
+       g++ \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/trunk
