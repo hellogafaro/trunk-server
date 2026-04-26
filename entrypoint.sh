@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
+
+echo "[trunk-environment] entrypoint start; TRUNK_HOME=${TRUNK_HOME:-unset} TRUNK_API_URL=${TRUNK_API_URL:-unset}"
 
 # Persistent state lives on the mounted volume so the serverId and any
 # claimed pairing survives container restarts.
 mkdir -p "${TRUNK_HOME}"
+echo "[trunk-environment] ensured ${TRUNK_HOME}"
 
 # Optional SSH key from a Railway/Render/Fly secret. The container needs
 # this to clone or push to private git remotes.
@@ -27,11 +30,10 @@ fi
 # boots reuse the existing config and skip the claim. Tolerate claim
 # failures so the server still comes up — the user can re-pair later.
 config_path="${TRUNK_HOME}/.trunk/config.json"
+echo "[trunk-environment] config_path=${config_path} exists=$([[ -f $config_path ]] && echo yes || echo no)"
 if [[ ! -f "${config_path}" ]]; then
-  if ! bun run apps/server/src/bin.ts pair; then
-    echo "WARN: trunk pair claim failed; bootstrapping config without claim."
-    bun run apps/server/src/bin.ts pair --no-claim || true
-  fi
+  echo "[trunk-environment] running trunk pair (with --no-claim for unattended bootstrap)"
+  bun run apps/server/src/bin.ts pair --no-claim || echo "[trunk-environment] WARN: trunk pair --no-claim exited non-zero"
 fi
 
 environment_id=$(grep -o '"environmentId"[[:space:]]*:[[:space:]]*"[^"]*"' "${config_path}" | head -1 | sed -E 's/.*"environmentId"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
@@ -44,6 +46,7 @@ echo ""
 
 # Loopback host keeps the inbound surface zero. The relay opens
 # loopback connections in-process; nothing else should reach /ws.
+echo "[trunk-environment] launching serve on port ${PORT:-3773}"
 exec bun run apps/server/src/bin.ts serve \
   --port "${PORT:-3773}" \
   --host 127.0.0.1
