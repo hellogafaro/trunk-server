@@ -1,0 +1,5 @@
+.git
+.trunk-data
+.DS_Store
+*.log
+README.md
