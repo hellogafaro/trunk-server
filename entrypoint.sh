@@ -24,10 +24,14 @@ fi
 
 # First boot writes ${TRUNK_HOME}/.trunk/config.json with a fresh
 # environmentId and runs the WorkOS device flow to claim it; subsequent
-# boots reuse the existing config and skip the claim.
+# boots reuse the existing config and skip the claim. Tolerate claim
+# failures so the server still comes up — the user can re-pair later.
 config_path="${TRUNK_HOME}/.trunk/config.json"
 if [[ ! -f "${config_path}" ]]; then
-  bun run apps/server/src/bin.ts pair
+  if ! bun run apps/server/src/bin.ts pair; then
+    echo "WARN: trunk pair claim failed; bootstrapping config without claim."
+    bun run apps/server/src/bin.ts pair --no-claim || true
+  fi
 fi
 
 environment_id=$(grep -o '"environmentId"[[:space:]]*:[[:space:]]*"[^"]*"' "${config_path}" | head -1 | sed -E 's/.*"environmentId"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
