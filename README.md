@@ -1,4 +1,4 @@
-# trunk-server
+# trunk-environment
 
 Container image that runs a Trunk server in the cloud and connects it to
 [`api.trunk.codes`](https://api.trunk.codes) via the outbound relay. Use
@@ -16,7 +16,7 @@ container exposes no inbound port to the public internet.
 ## Deploy on Railway
 
 1. Click **New Project → Deploy from GitHub repo** and pick your fork (or
-   the canonical `hellogafaro/trunk-server`).
+   the canonical `hellogafaro/trunk-environment`).
 2. **Volume**: add a persistent volume mounted at `/data`. This is where
    `~/.trunk/config.json` lives — without it every redeploy generates a
    fresh `serverId` and you'd have to re-pair.
@@ -63,17 +63,17 @@ The image clones `hellogafaro/trunk@main` by default. Pin to a specific
 tag or commit at build time:
 
 ```
-docker build --build-arg TRUNK_REF=v0.1.0 -t trunk-server .
+docker build --build-arg TRUNK_REF=v0.1.0 -t trunk-environment .
 ```
 
 ## Local sanity check
 
 ```bash
-docker build -t trunk-server .
+docker build -t trunk-environment .
 docker run --rm \
   -e TRUNK_API_URL=ws://host.docker.internal:8787 \
   -v "$(pwd)/.trunk-data:/data" \
-  trunk-server
+  trunk-environment
 ```
 
 This points the container at a local `wrangler dev` instance and stores
