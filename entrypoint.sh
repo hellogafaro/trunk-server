@@ -25,9 +25,18 @@ fi
 # First boot writes ${TRUNK_HOME}/.trunk/config.json with a fresh
 # serverId; subsequent boots reuse it. The serverId is what users paste
 # into app.trunk.codes/connect-server.
-if [[ ! -f "${TRUNK_HOME}/.trunk/config.json" ]]; then
+config_path="${TRUNK_HOME}/.trunk/config.json"
+if [[ ! -f "${config_path}" ]]; then
   bun run apps/server/src/bin.ts pair
 fi
+
+server_id=$(grep -o '"serverId"[[:space:]]*:[[:space:]]*"[^"]*"' "${config_path}" | head -1 | sed -E 's/.*"serverId"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
+echo ""
+echo "============================================"
+echo "  Trunk serverId: ${server_id}"
+echo "  Paste it at: https://app.trunk.codes/connect"
+echo "============================================"
+echo ""
 
 # Loopback host keeps the inbound surface zero. The relay opens
 # loopback connections in-process; nothing else should reach /ws.
