@@ -35,7 +35,8 @@ RUN rm -rf \
   && find . -name "*.map" -delete
 
 # Stage 2 — slim runtime. No toolchain, just bun + git + ssh for git
-# auth.
+# auth, plus node + npm so users can `npm i -g` provider CLIs (Codex,
+# Claude Code, OpenCode) from the in-app provider setup flow.
 FROM oven/bun:1-slim
 
 RUN apt-get update \
@@ -43,6 +44,8 @@ RUN apt-get update \
        git \
        openssh-client \
        ca-certificates \
+       nodejs \
+       npm \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/trunk
