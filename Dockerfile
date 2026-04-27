@@ -14,8 +14,11 @@ RUN apt-get update \
 WORKDIR /opt/trunk
 
 ARG TRUNK_REPO=https://github.com/hellogafaro/trunk.git
-ARG TRUNK_REF=main
-RUN git clone --depth 1 --branch "${TRUNK_REF}" "${TRUNK_REPO}" . \
+# Pin to a SHA so each bump invalidates the Docker layer cache and we
+# always get the intended trunk revision. To upgrade: edit this line.
+ARG TRUNK_REF=a6daf02a
+RUN git clone "${TRUNK_REPO}" . \
+  && git checkout "${TRUNK_REF}" \
   && bun install --frozen-lockfile
 
 # Drop everything the headless server doesn't need at runtime: sibling
