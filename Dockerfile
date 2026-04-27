@@ -16,7 +16,7 @@ WORKDIR /opt/trunk
 ARG TRUNK_REPO=https://github.com/hellogafaro/trunk.git
 # Pin to a SHA so each bump invalidates the Docker layer cache and we
 # always get the intended trunk revision. To upgrade: edit this line.
-ARG TRUNK_REF=49acc411
+ARG TRUNK_REF=d548a386
 RUN git clone "${TRUNK_REPO}" . \
   && git checkout "${TRUNK_REF}" \
   && bun install --frozen-lockfile
