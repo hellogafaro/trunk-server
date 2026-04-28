@@ -52,7 +52,6 @@ WORKDIR /opt/trunk
 COPY --from=builder /opt/trunk /opt/trunk
 
 ENV TRUNK_HOME=/data
-ENV TRUNK_API_URL=wss://api.trunk.codes
 ENV NODE_ENV=production
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

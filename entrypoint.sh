@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-echo "[trunk-environment] entrypoint start; TRUNK_HOME=${TRUNK_HOME:-unset} TRUNK_API_URL=${TRUNK_API_URL:-unset}"
+if [[ -n "${RAILWAY_PUBLIC_DOMAIN:-}" && -z "${TRUNK_PUBLIC_URL:-}" ]]; then
+  export TRUNK_PUBLIC_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
+fi
+
+echo "[trunk-environment] entrypoint start; TRUNK_HOME=${TRUNK_HOME:-unset} TRUNK_PUBLIC_URL=${TRUNK_PUBLIC_URL:-unset}"
 
 # Persistent state lives on the mounted volume so the environmentId and
 # claimed pairing survive container restarts.
@@ -28,6 +32,6 @@ fi
 # first boot, prints the SaaS pair URL, then runs the server. That logic
 # lives in the CLI itself — no shell-side banner needed.
 echo "[trunk-environment] launching trunk on port ${PORT:-3773}"
-exec bun run apps/server/src/bin.ts start \
+exec bun run apps/server/src/bin.ts serve \
   --port "${PORT:-3773}" \
   --host 0.0.0.0
