@@ -1,80 +1,81 @@
 # trunk-environment
 
-Container image that runs a Trunk server in the cloud and connects it to
-[`api.trunk.codes`](https://api.trunk.codes) via the outbound relay. Use
-this when you want a Trunk environment that isn't your laptop — Railway,
-Render, Fly, Hetzner, anywhere that runs Docker.
+Container image that runs a [Trunk](https://github.com/hellogafaro/trunk)
+server in the cloud. Pairs with [app.trunk.codes](https://app.trunk.codes)
+over a direct HTTPS/WSS connection — no relay, no Trunk-side data path.
 
 ## How it works
 
-The Trunk CLI (in [hellogafaro/trunk](https://github.com/hellogafaro/trunk))
-opens a single outbound WebSocket to `api.trunk.codes`. Each browser that
-signs in at [app.trunk.codes](https://app.trunk.codes) is bridged through
-that link to the loopback `/ws` endpoint inside the container. The
-container exposes no inbound port to the public internet.
+The container starts T3 in `serve` mode on the port Railway assigns. T3
+prints a pair URL + token. You paste the URL + token into
+`app.trunk.codes/onboarding`. The browser holds a bearer; Trunk's tiny
+Worker (`api.trunk.codes`) keeps the saved-env list in WorkOS Vault so
+the same envs show up on every device you sign into.
 
-## Deploy on Railway
+## Deploy on Railway (one-click)
 
-1. Click **New Project → Deploy from GitHub repo** and pick your fork (or
-   the canonical `hellogafaro/trunk-environment`).
-2. **Volume**: add a persistent volume mounted at `/data`. This is where
-   `~/.trunk/config.json` lives — without it every redeploy generates a
-   fresh `serverId` and you'd have to re-pair.
-3. **Variables**:
-   | Name | Value |
+The recommended path is the published Railway template — it preconfigures
+the domain (port 8080), the persistent volume (`/data`), and the env-var
+schema. Replace the URL below with the published template once you create
+it from your service in the Railway dashboard:
+
+> Deploy on Railway: _replace with the published template URL_
+
+## Deploy on Railway (manual)
+
+1. **New Project → Deploy from GitHub repo** → pick this repo.
+2. **Networking**: generate a domain with **target port 8080**. Railway
+   will inject `RAILWAY_PUBLIC_DOMAIN`; the entrypoint forwards it as
+   `TRUNK_PUBLIC_URL` so the printed pair URL is publicly reachable.
+3. **Volume**: mount `/data`. Without it the env identity rotates on
+   every redeploy.
+4. **Variables** (all optional):
+
+   | Name | Purpose |
    |---|---|
-   | `TRUNK_API_URL` | `wss://api.trunk.codes` |
-   | `TRUNK_HOME` | `/data` |
-   | `ANTHROPIC_API_KEY` | (optional, for the Claude provider) |
-   | `OPENAI_API_KEY` | (optional, for the Codex provider) |
-   | `SSH_PRIVATE_KEY` | (optional, for cloning private repos) |
-   | `GIT_USER_NAME` / `GIT_USER_EMAIL` | (optional, for agent commits) |
-4. **Public networking**: leave it disabled. Trunk only dials outbound.
-5. Deploy. Look at the logs — the first boot prints a WorkOS device
-   verification URL and waits:
+   | `ANTHROPIC_API_KEY` | Claude provider |
+   | `OPENAI_API_KEY` | Codex provider |
+   | `SSH_PRIVATE_KEY` | clone/push to private git remotes |
+   | `GIT_USER_NAME` / `GIT_USER_EMAIL` | agent-authored commits |
+   | `TRUNK_PUBLIC_URL` | overrides the auto-detected public URL |
+
+5. Deploy. The boot log prints:
+
    ```
-   Sign in to Trunk to claim this environment:
-
-     https://workos.com/device?user_code=ABCD-EFGH
-
-   Waiting for sign-in...
+   Trunk server is ready.
+   Connection string: https://<your-railway-domain>
+   Token: <pair-token>
+   Pairing URL: https://<your-railway-domain>/pair#token=<token>
    ```
-6. Open that URL in any browser, sign in to your Trunk account, and
-   approve. The container picks up the access token automatically and
-   writes the environmentId into your WorkOS metadata. Refresh
-   [app.trunk.codes](https://app.trunk.codes) and you're connected.
 
-No env var is required to claim against the public Trunk SaaS — the
-container ships with the right WorkOS client baked in. Forks pointing
-at their own AuthKit instance override it with `TRUNK_WORKOS_CLIENT_ID`.
+6. Open `app.trunk.codes/onboarding`. Paste the **Connection string** as
+   _Environment URL_, the **Token** as _Pair token_, give it a label.
 
 ## Deploy elsewhere
 
-Any Docker host works. The only requirements:
+Any Docker host works. Requirements:
 
-- Outbound HTTPS to `api.trunk.codes`.
-- Persistent volume at `${TRUNK_HOME}` (default `/data`) so the
-  `serverId` survives restarts.
-- No inbound port needs to be exposed.
+- A reachable HTTPS hostname (Tailscale, Cloudflare Tunnel, or your own
+  TLS proxy). `app.trunk.codes` only connects over `https://` or
+  `ws://localhost`.
+- Persistent volume at `${TRUNK_HOME}` (default `/data`).
+- Set `TRUNK_PUBLIC_URL` to the public hostname so the printed pair URL
+  is correct.
 
 ## Pinning a CLI version
 
 The image clones `hellogafaro/trunk@main` by default. Pin to a specific
-tag or commit at build time:
+commit or tag at build time:
 
 ```
-docker build --build-arg TRUNK_REF=v0.1.0 -t trunk-environment .
+docker build --build-arg TRUNK_REF=<sha> -t trunk-environment .
 ```
 
-## Local sanity check
+## Publishing the Railway template
 
-```bash
-docker build -t trunk-environment .
-docker run --rm \
-  -e TRUNK_API_URL=ws://host.docker.internal:8787 \
-  -v "$(pwd)/.trunk-data:/data" \
-  trunk-environment
-```
+Once the service is configured (domain, volume, env vars):
 
-This points the container at a local `wrangler dev` instance and stores
-the serverId in `./.trunk-data/`.
+1. Railway dashboard → service → **Create Template**.
+2. Railway snapshots the repo URL, branch, and current dashboard config.
+3. Share the resulting template URL — clicking it deploys a new service
+   with the same config preconfigured.
