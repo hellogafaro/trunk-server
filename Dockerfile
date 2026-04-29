@@ -48,6 +48,7 @@ RUN apt-get update \
        gosu \
        nodejs \
        npm \
+       sudo \
   && rm -rf /var/lib/apt/lists/*
 
 ENV SHELL=/bin/bash
@@ -71,13 +72,17 @@ RUN npm install -g \
   && agent --version
 
 RUN groupadd --system --gid 10001 trunk \
-  && useradd --system --uid 10001 --gid trunk --home-dir /data --shell /bin/bash trunk
+  && useradd --system --uid 10001 --gid trunk --home-dir /data --shell /bin/bash trunk \
+  && printf 'trunk ALL=(ALL) NOPASSWD:ALL\n' > /etc/sudoers.d/trunk \
+  && chmod 0440 /etc/sudoers.d/trunk
 
 WORKDIR /opt/trunk
 COPY --from=builder /opt/trunk /opt/trunk
 
 ENV TRUNK_HOME=/data
+ENV NPM_CONFIG_PREFIX=/data/.npm-global
 ENV NODE_ENV=production
+ENV PATH="/data/.npm-global/bin:/usr/local/bin:${PATH}"
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
