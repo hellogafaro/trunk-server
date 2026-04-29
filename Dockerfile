@@ -34,9 +34,8 @@ RUN rm -rf \
       .turbo \
   && find . -name "*.map" -delete
 
-# Stage 2 — slim runtime. No toolchain, just bun + git + ssh for git
-# auth, plus the agent CLIs baked into the image. Auth/config lives on
-# /data; binaries stay in the image layer and do not consume volume space.
+# Stage 2 — slim runtime. No toolchain, just package managers and basic
+# shell/git tooling. Provider CLIs are installed by users from the terminal.
 FROM oven/bun:1-slim
 
 RUN apt-get update \
@@ -54,22 +53,12 @@ RUN apt-get update \
 ENV SHELL=/bin/bash
 ENV PATH="/usr/local/bin:${PATH}"
 
-RUN npm install -g \
-      @anthropic-ai/claude-code@latest \
-      @openai/codex@latest \
-      opencode-ai@latest \
+RUN npm install -g pnpm@latest \
   && npm cache clean --force \
-  && curl https://cursor.com/install -fsS | bash \
-  && cursor_agent_dir="$(find /root/.local/share/cursor-agent/versions -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)" \
-  && mkdir -p /usr/local/share/cursor-agent \
-  && cp -a "${cursor_agent_dir}" /usr/local/share/cursor-agent/current \
-  && ln -sf /usr/local/share/cursor-agent/current/cursor-agent /usr/local/bin/agent \
-  && ln -sf /usr/local/share/cursor-agent/current/cursor-agent /usr/local/bin/cursor-agent \
-  && command -v claude \
-  && command -v codex \
-  && command -v opencode \
-  && command -v agent \
-  && agent --version
+  && bun --version \
+  && node --version \
+  && npm --version \
+  && pnpm --version
 
 RUN groupadd --system --gid 10001 trunk \
   && useradd --system --uid 10001 --gid trunk --home-dir /data --shell /bin/bash trunk \
@@ -81,8 +70,10 @@ COPY --from=builder /opt/trunk /opt/trunk
 
 ENV TRUNK_HOME=/data
 ENV NPM_CONFIG_PREFIX=/data/.npm-global
+ENV PNPM_HOME=/data/.pnpm
+ENV BUN_INSTALL=/data/.bun
 ENV NODE_ENV=production
-ENV PATH="/data/.npm-global/bin:/usr/local/bin:${PATH}"
+ENV PATH="/data/.npm-global/bin:/data/.pnpm:/data/.bun/bin:/usr/local/bin:${PATH}"
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

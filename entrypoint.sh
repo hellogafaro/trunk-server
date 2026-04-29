@@ -21,7 +21,12 @@ run_as_app() {
 
 # Persistent state lives on the mounted volume so the environmentId and
 # claimed pairing survive container restarts.
-mkdir -p "${TRUNK_HOME}" "${TRUNK_HOME}/projects" "${TRUNK_HOME}/.npm-global"
+mkdir -p \
+  "${TRUNK_HOME}" \
+  "${TRUNK_HOME}/projects" \
+  "${TRUNK_HOME}/.npm-global" \
+  "${TRUNK_HOME}/.pnpm" \
+  "${TRUNK_HOME}/.bun/bin"
 if [[ "$(id -u)" -eq 0 ]]; then
   chown -R "${TRUNK_RUN_USER}:${TRUNK_RUN_USER}" "${TRUNK_HOME}"
 fi
