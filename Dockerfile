@@ -16,7 +16,7 @@ WORKDIR /opt/trunk
 ARG TRUNK_REPO=https://github.com/hellogafaro/trunk.git
 # Pin to a SHA so each bump invalidates the Docker layer cache and we
 # always get the intended trunk revision. To upgrade: edit this line.
-ARG TRUNK_REF=d6921611
+ARG TRUNK_REF=63b1fb4031c6e2c3c28d89261969e2425298e6c5
 RUN git clone "${TRUNK_REPO}" . \
   && git checkout "${TRUNK_REF}" \
   && bun install --frozen-lockfile
@@ -45,12 +45,13 @@ RUN apt-get update \
        openssh-client \
        ca-certificates \
        curl \
+       gosu \
        nodejs \
        npm \
   && rm -rf /var/lib/apt/lists/*
 
 ENV SHELL=/bin/bash
-ENV PATH="/root/.local/bin:${PATH}"
+ENV PATH="/usr/local/bin:${PATH}"
 
 RUN npm install -g \
       @anthropic-ai/claude-code@latest \
@@ -58,10 +59,16 @@ RUN npm install -g \
       opencode-ai@latest \
   && npm cache clean --force \
   && curl https://cursor.com/install -fsS | bash \
+  && cp -L /root/.local/bin/agent /usr/local/bin/agent \
+  && cp -L /root/.local/bin/cursor-agent /usr/local/bin/cursor-agent \
+  && chmod +x /usr/local/bin/agent /usr/local/bin/cursor-agent \
   && command -v claude \
   && command -v codex \
   && command -v opencode \
   && command -v agent
+
+RUN groupadd --system --gid 10001 trunk \
+  && useradd --system --uid 10001 --gid trunk --home-dir /data --shell /bin/bash trunk
 
 WORKDIR /opt/trunk
 COPY --from=builder /opt/trunk /opt/trunk
