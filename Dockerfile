@@ -16,7 +16,7 @@ WORKDIR /opt/trunk
 ARG TRUNK_REPO=https://github.com/hellogafaro/trunk.git
 # Pin to a SHA so each bump invalidates the Docker layer cache and we
 # always get the intended trunk revision. To upgrade: edit this line.
-ARG TRUNK_REF=c0222658
+ARG TRUNK_REF=ff36f30e
 RUN git clone "${TRUNK_REPO}" . \
   && git checkout "${TRUNK_REF}" \
   && bun install --frozen-lockfile
@@ -35,8 +35,8 @@ RUN rm -rf \
   && find . -name "*.map" -delete
 
 # Stage 2 — slim runtime. No toolchain, just bun + git + ssh for git
-# auth, plus node + npm so users can `npm i -g` provider CLIs (Codex,
-# Claude Code, OpenCode) from the in-app provider setup flow.
+# auth, plus the agent CLIs baked into the image. Auth/config lives on
+# /data; binaries stay in the image layer and do not consume volume space.
 FROM oven/bun:1-slim
 
 RUN apt-get update \
@@ -44,9 +44,24 @@ RUN apt-get update \
        git \
        openssh-client \
        ca-certificates \
+       curl \
        nodejs \
        npm \
   && rm -rf /var/lib/apt/lists/*
+
+ENV SHELL=/bin/bash
+ENV PATH="/root/.local/bin:${PATH}"
+
+RUN npm install -g \
+      @anthropic-ai/claude-code@latest \
+      @openai/codex@latest \
+      opencode-ai@latest \
+  && npm cache clean --force \
+  && curl https://cursor.com/install -fsS | bash \
+  && command -v claude \
+  && command -v codex \
+  && command -v opencode \
+  && command -v agent
 
 WORKDIR /opt/trunk
 COPY --from=builder /opt/trunk /opt/trunk
