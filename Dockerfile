@@ -59,13 +59,16 @@ RUN npm install -g \
       opencode-ai@latest \
   && npm cache clean --force \
   && curl https://cursor.com/install -fsS | bash \
-  && cp -L /root/.local/bin/agent /usr/local/bin/agent \
-  && cp -L /root/.local/bin/cursor-agent /usr/local/bin/cursor-agent \
-  && chmod +x /usr/local/bin/agent /usr/local/bin/cursor-agent \
+  && cursor_agent_dir="$(find /root/.local/share/cursor-agent/versions -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)" \
+  && mkdir -p /usr/local/share/cursor-agent \
+  && cp -a "${cursor_agent_dir}" /usr/local/share/cursor-agent/current \
+  && ln -sf /usr/local/share/cursor-agent/current/cursor-agent /usr/local/bin/agent \
+  && ln -sf /usr/local/share/cursor-agent/current/cursor-agent /usr/local/bin/cursor-agent \
   && command -v claude \
   && command -v codex \
   && command -v opencode \
-  && command -v agent
+  && command -v agent \
+  && agent --version
 
 RUN groupadd --system --gid 10001 trunk \
   && useradd --system --uid 10001 --gid trunk --home-dir /data --shell /bin/bash trunk
