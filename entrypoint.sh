@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+export TRUNK_HOME="${TRUNK_HOME:-/data}"
+export HOME="${TRUNK_HOME}"
+
 if [[ -n "${RAILWAY_PUBLIC_DOMAIN:-}" && -z "${TRUNK_PUBLIC_URL:-}" ]]; then
   export TRUNK_PUBLIC_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
 fi
 
-echo "[trunk-environment] entrypoint start; TRUNK_HOME=${TRUNK_HOME:-unset} TRUNK_PUBLIC_URL=${TRUNK_PUBLIC_URL:-unset}"
+echo "[trunk-environment] entrypoint start; TRUNK_HOME=${TRUNK_HOME} HOME=${HOME} TRUNK_PUBLIC_URL=${TRUNK_PUBLIC_URL:-unset}"
 
 # Persistent state lives on the mounted volume so the environmentId and
 # claimed pairing survive container restarts.
@@ -14,10 +17,10 @@ mkdir -p "${TRUNK_HOME}"
 # Optional SSH key from a Railway/Render/Fly secret. The container needs
 # this to clone or push to private git remotes.
 if [[ -n "${SSH_PRIVATE_KEY:-}" ]]; then
-  mkdir -p /root/.ssh
-  printf '%s\n' "${SSH_PRIVATE_KEY}" > /root/.ssh/id_ed25519
-  chmod 600 /root/.ssh/id_ed25519
-  ssh-keyscan github.com >> /root/.ssh/known_hosts 2>/dev/null || true
+  mkdir -p "${HOME}/.ssh"
+  printf '%s\n' "${SSH_PRIVATE_KEY}" > "${HOME}/.ssh/id_ed25519"
+  chmod 600 "${HOME}/.ssh/id_ed25519"
+  ssh-keyscan github.com >> "${HOME}/.ssh/known_hosts" 2>/dev/null || true
 fi
 
 # Optional git user identity for commits the agent makes.
@@ -34,4 +37,5 @@ fi
 echo "[trunk-environment] launching trunk on port ${PORT:-3773}"
 exec bun run apps/server/src/bin.ts serve \
   --port "${PORT:-3773}" \
-  --host 0.0.0.0
+  --host 0.0.0.0 \
+  --base-dir "${TRUNK_HOME}"
